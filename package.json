@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "vercel-build": "npm install --legacy-peer-deps && npm run build"
   },
   "dependencies": {
     "@emotion/react": "^11.13.3",
@@ -56,3 +57,4 @@
     "typescript": "^5.2.2"
   }
 }
+

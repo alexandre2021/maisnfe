@@ -848,12 +848,7 @@ const Perfil = () => {
                                 />
                             </Box>
 
-
-
-                            {/* Autenticação de dois fatores */}
-
-
-                            
+                            {/* Autenticação de dois fatores */}                           
 
                             <Box sx={{ marginBottom: '20px' }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: '10px', marginTop: '10px' }}>
