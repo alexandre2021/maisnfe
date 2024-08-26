@@ -159,6 +159,8 @@ const Perfil = () => {
         checkAuth();
     }, [router]);
 
+
+
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0] || null;
         if (file) {
@@ -371,6 +373,25 @@ const Perfil = () => {
             console.error('Erro inesperado ao salvar as notificações:', error);
         }
     };
+
+
+
+
+
+//Parte 2
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     // Função para alterar o idioma e salvar no banco de dados
     const handleIdiomaChange = async (novoIdioma: string) => {
