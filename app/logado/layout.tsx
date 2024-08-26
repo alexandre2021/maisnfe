@@ -1,31 +1,21 @@
 'use client';
 
-import React, { useState, useEffect, createContext } from 'react';
-import Sidebar from './sidebar';
+import React, { useState, useEffect } from 'react';
+import Sidebar from './sidebar'; // Ajuste para receber o tema via props
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import '../estilos/globals.css';
 
 type Tema = 'claro' | 'escuro';
 
-interface TemaContextProps {
-    temaAtual: Tema;
-    setTemaAtual: (tema: Tema) => void;
-}
-
-export const TemaContext = createContext<TemaContextProps>({
-    temaAtual: 'claro',
-    setTemaAtual: () => { },
-});
-
 export default function LogadoLayout({ children }: { children: React.ReactNode }) {
     const [temaAtual, setTemaAtual] = useState<Tema>('claro');
 
     useEffect(() => {
-        const storedTema = sessionStorage.getItem('tema') as Tema || 'claro';
+        const storedTema = (sessionStorage.getItem('tema') as Tema) || 'claro';
         setTemaAtual(storedTema);
 
         const handleStorageChange = () => {
-            const newTema = sessionStorage.getItem('tema') as Tema || 'claro';
+            const newTema = (sessionStorage.getItem('tema') as Tema) || 'claro';
             setTemaAtual(newTema);
         };
 
@@ -40,33 +30,34 @@ export default function LogadoLayout({ children }: { children: React.ReactNode }
         palette: {
             mode: temaAtual === 'claro' ? 'light' : 'dark',
             primary: {
-                main: temaAtual === 'claro' ? '#1976d2' : '#90caf9', // Azul claro no tema escuro
+                main: temaAtual === 'claro' ? '#1976d2' : '#90caf9',
             },
             secondary: {
-                main: temaAtual === 'claro' ? '#9c27b0' : '#f48fb1', // Rosa claro no tema escuro
+                main: temaAtual === 'claro' ? '#9c27b0' : '#f48fb1',
             },
             background: {
-                default: temaAtual === 'claro' ? '#f8f9fa' : '#121212', // Cinza escuro no tema escuro
-                paper: temaAtual === 'claro' ? '#ffffff' : '#1d1d1d', // Definindo o papel no tema escuro
+                default: temaAtual === 'claro' ? '#f8f9fa' : '#121212',
+                paper: temaAtual === 'claro' ? '#ffffff' : '#1d1d1d',
             },
             text: {
-                primary: temaAtual === 'claro' ? '#000000' : '#ffffff', // Branco no tema escuro
-                secondary: temaAtual === 'claro' ? '#4f4f4f' : '#aaaaaa', // Cinza claro para textos secundários no tema escuro
+                primary: temaAtual === 'claro' ? '#000000' : '#ffffff',
+                secondary: temaAtual === 'claro' ? '#4f4f4f' : '#aaaaaa',
             },
         },
     });
 
     return (
-        <TemaContext.Provider value={{ temaAtual, setTemaAtual }}>
-            <ThemeProvider theme={theme}>
-                <CssBaseline />
-                <div style={{ display: 'flex', minHeight: '100vh' }}>
-                    <Sidebar />
-                    <main style={{ flexGrow: 1, padding: '20px', marginLeft: '80px' }}>
-                        {children}
-                    </main>
-                </div>
-            </ThemeProvider>
-        </TemaContext.Provider>
+        <ThemeProvider theme={theme}>
+            <CssBaseline />
+            <div style={{ display: 'flex', minHeight: '100vh' }}>
+                <Sidebar tema={temaAtual} /> {/* Passando o tema para o Sidebar via props */}
+                <main style={{ flexGrow: 1, padding: '20px', marginLeft: '80px' }}>
+                    {children}
+                </main>
+            </div>
+        </ThemeProvider>
     );
 }
+
+
+

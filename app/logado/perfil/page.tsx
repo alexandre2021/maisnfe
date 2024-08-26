@@ -7,21 +7,19 @@ import Image from 'next/image';
 import { v4 as uuidv4 } from 'uuid';
 import {
     Button, Tabs, Tab, Box, Avatar, IconButton, TextField, Fab, CircularProgress,
-    CssBaseline, FormGroup, FormControlLabel, Switch, Typography, Tooltip, InputAdornment
+    CssBaseline, FormGroup, FormControlLabel, Switch, Typography, Tooltip
 } from '@mui/material';
-import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import InfoIcon from '@mui/icons-material/Info';
-import { DataGrid, GridToolbar, GridToolbarContainer, GridToolbarExport, GridToolbarFilterButton, GridColDef } from '@mui/x-data-grid';
+import { DataGrid, GridToolbarContainer, GridToolbarExport, GridToolbarFilterButton, GridColDef } from '@mui/x-data-grid';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import SaveIcon from '@mui/icons-material/Save';
 import PhoneNumberInput from '../../componentes/telefone_input';
 import CustomModal from '../../componentes/modal';
-import { format, addDays, set } from 'date-fns';
+import { format } from 'date-fns';
 
 const Perfil = () => {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-    const [user, setUser] = useState<any>(null);
+    //const [user, setUser] = useState<any>(null);
     const [imageUrlBancoDeDados, setImageUrlBancoDeDados] = useState<string | null>(null);
     const [imageUrlTela, setImageUrlTela] = useState<string | null>(null);
     const [avatarLetra, setAvatarLetra] = useState<string>('');
@@ -49,13 +47,7 @@ const Perfil = () => {
     //as colunas data e cidade serão do tipo singleSelect e precisão das opções em valueOptions
     const [dateOptions, setDateOptions] = useState<string[]>([]);
     const [cityOptions, setCityOptions] = useState<string[]>([]);
-    const [showPassword, setShowPassword] = useState(false);
-    const [passwords, setPasswords] = useState({
-        senhaAtual: '',
-        novaSenha: '',
-        confirmarNovaSenha: '',
-    });
-    const [passwordError, setPasswordError] = useState<string>(''); // Estado para armazenar o erro da senha
+
 
     useEffect(() => {
         const checkAuth = async () => {
@@ -63,7 +55,6 @@ const Perfil = () => {
                 const { data: { session } } = await supabase.auth.getSession();
                 if (session) {
                     setIsAuthenticated(true);
-                    setUser(session.user);
                     if (typeof window !== 'undefined') {
                         // Somente será executado no lado do cliente
                         setImageUrlTela(sessionStorage.getItem('avatar_url') || '');
@@ -155,11 +146,8 @@ const Perfil = () => {
                 setIsLoading(false); // Define o carregamento como concluído
             }
         };
-
         checkAuth();
     }, [router]);
-
-
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0] || null;
@@ -172,9 +160,9 @@ const Perfil = () => {
         }
     };
 
-    const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
         setSelectedTab(newValue);
-    };
+    };    
 
     if (isAuthenticated === null) {
         return <div>Loading...</div>;
@@ -373,25 +361,6 @@ const Perfil = () => {
             console.error('Erro inesperado ao salvar as notificações:', error);
         }
     };
-
-
-
-
-
-//Parte 2
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     // Função para alterar o idioma e salvar no banco de dados
     const handleIdiomaChange = async (novoIdioma: string) => {
@@ -859,9 +828,6 @@ const Perfil = () => {
                         <Box role="tabpanel" hidden={selectedTab !== 2} sx={{ width: '100%', paddingTop: '10px', paddingBottom: '20px' }}>
 
                             {/* Alterar Senha */}
-
-
-
                             <Box>
                                 <Typography variant="subtitle1" sx={{ marginRight: '10px' }}>Senha:</Typography>
                                 <Button
@@ -886,6 +852,9 @@ const Perfil = () => {
 
                             {/* Autenticação de dois fatores */}
 
+
+                            
+
                             <Box sx={{ marginBottom: '20px' }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: '10px', marginTop: '10px' }}>
                                     <Typography variant="subtitle1" sx={{ marginRight: '10px' }}>
@@ -904,7 +873,7 @@ const Perfil = () => {
                                     </Button>
                                 )}
                                 {autenticacao2fa === 'false' && segredo2fa !== '' && url2fa !== '' && (
-                                    <Box sx={{ display: 'flex', alignItems: 'center', marginTop: '20px', backgroundColor: '#f8f9fa', padding: '10px', borderRadius: '8px' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', marginTop: '20px', backgroundColor: 'transparent', padding: '10px', borderRadius: '8px' }}>
                                         {/* Box para o campo de texto e botão */}
                                         <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', marginRight: '20px' }}>
                                             <TextField
@@ -924,7 +893,7 @@ const Perfil = () => {
                                         </Box>
 
                                         {/* Box para o QR Code */}
-                                        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
                                             <Image
                                                 src={url2fa}
                                                 alt="QR Code para autenticação 2FA"
@@ -942,6 +911,14 @@ const Perfil = () => {
                                     </Button>
                                 )}
                             </Box>
+
+
+
+
+
+
+
+
                         </Box>
 
                         {/* Tab Log de acesso */}

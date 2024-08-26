@@ -2,7 +2,7 @@
 
 import React, { useState, FormEvent } from 'react';
 import { supabase } from '../utils/supabase/client';
-import CpfCnpjInput from 'react-cpf-cnpj-input';
+//import CpfCnpjInput from 'react-cpf-cnpj-input';
 import CustomModal from '../componentes/modal';
 
 export default function Cadastro() {
@@ -215,13 +215,33 @@ export default function Cadastro() {
         </div>
         <div className="mb-3">
           <label htmlFor="cnpj" className="formulario-label">CNPJ</label>
-          <CpfCnpjInput
+
+
+          
+
+          
+        {/* <CpfCnpjInput
             type="cnpj"
             value={cnpj}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCnpj(e.target.value)}
             className="formulario-elementos"
             required
-          />
+        /> */}
+
+
+        <input
+            type="text"
+            value={cnpj}
+            onChange={(e) => setCnpj(e.target.value)}
+            className="formulario-elementos"
+            required
+        />
+
+
+
+
+
+
         </div>
         <div className="mb-3">
           <label htmlFor="password" className="formulario-label">Senha</label>

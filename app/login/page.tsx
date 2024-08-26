@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../utils/supabase/client';
 import CustomModal from '../componentes/modal';
-import Avatar from '@mui/material/Avatar';
+//import Avatar from '@mui/material/Avatar';
 
 // Reintroduzindo as variáveis de controle de tempo
 let lastRequestTimeCnpja: number | null = null;
@@ -186,7 +186,7 @@ export default function Login() {
     const [isSuccess, setIsSuccess] = useState(false);
     const [showPassword, setShowPassword] = useState(false); // Adiciona o estado para controlar a visibilidade da senha
     const [totpCode, setTotpCode] = useState('');
-    const [usuarioData, setUsuarioData] = useState<any>(null);
+    const [usuarioData] = useState<any>(null);
 
 
     const handleCloseModal = () => {

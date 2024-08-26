@@ -1,19 +1,21 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dashboard, PeopleAlt, Article, Settings, LogoDevOutlined } from '@mui/icons-material';
 import AccountBoxIcon from '@mui/icons-material/AccountBox';
 import { Avatar, Menu, MenuItem, IconButton, Tooltip, Box } from '@mui/material';
-import { usePathname } from 'next/navigation';
 import { supabase } from '../utils/supabase/client';
 import Image from 'next/image';
 import Link from 'next/link';
-import { TemaContext } from './layout'; // Importa o contexto do tema
 
-const Sidebar = () => {
-    const pathname = usePathname();
+// Defina o tipo para a prop 'tema'
+
+type SidebarProps = {
+    tema: 'claro' | 'escuro';
+};
+
+const Sidebar: React.FC<SidebarProps> = ({ tema }) => {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [avatarLetra, setAvatarLetra] = useState<string>('');
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-    const { temaAtual } = useContext(TemaContext); // Utilize o tema do contexto
 
     useEffect(() => {
         const storedAvatarLetra = sessionStorage.getItem('avatar_letra');
@@ -48,77 +50,59 @@ const Sidebar = () => {
     return (
         <Box
             sx={{
-                backgroundColor: temaAtual === 'claro' ? '#f8f9fa' : 'background.default',
-                color: temaAtual === 'claro' ? 'text.primary' : 'text.secondary',
+                backgroundColor: tema === 'claro' ? '#f8f9fa' : '#121212',
+                color: tema === 'claro' ? '#000000' : '#ffffff',
                 transition: 'background-color 0.3s, color 0.3s',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
-                position: 'fixed', // Mantém o Sidebar fixo
+                position: 'fixed',
                 height: '100vh',
-                width: '80px', // Defina uma largura fixa adequada para o Sidebar
+                width: '80px',
                 padding: '16px',
-                top: 0, // Fixa o Sidebar no topo
-                left: 0, // Fixa o Sidebar à esquerda
+                top: 0,
+                left: 0,
             }}
         >
             <div className="sidebar-top" style={{ flexGrow: 1 }}>
                 <div className="logo-container mb-3">
                     <Link href="/logado/dashboard">
-                        <LogoDevOutlined 
-                            className="sidebar-icon" 
-                            sx={{ color: temaAtual === 'claro' ? '#000' : '#fff' }} // Ícone mais claro no tema escuro
-                        />
+                        <LogoDevOutlined className="sidebar-icon" sx={{ color: tema === 'claro' ? '#000' : '#fff' }} />
                     </Link>
                 </div>
                 <ul className="nav nav-pills nav-flush flex-column mb-auto text-center">
                     <li className="nav-item">
                         <Tooltip title="Dashboard" placement="right">
                             <Link href="/logado/dashboard">
-                                <Dashboard 
-                                    className="sidebar-icon" 
-                                    sx={{ color: temaAtual === 'claro' ? '#000' : '#fff' }} 
-                                />
+                                <Dashboard className="sidebar-icon" sx={{ color: tema === 'claro' ? '#000' : '#fff' }} />
                             </Link>
                         </Tooltip>
                     </li>
                     <li className="nav-item">
                         <Tooltip title="Usuários" placement="right">
                             <Link href="/logado/usuarios">
-                                <AccountBoxIcon 
-                                    className="sidebar-icon" 
-                                    sx={{ color: temaAtual === 'claro' ? 'text.primary' : 'text.secondary' }} 
-                                />
+                                <AccountBoxIcon className="sidebar-icon" sx={{ color: tema === 'claro' ? '#000' : '#fff' }} />
                             </Link>
                         </Tooltip>
                     </li>
                     <li className="nav-item">
                         <Tooltip title="Clientes" placement="right">
                             <Link href="/logado/clientes">
-                                <PeopleAlt 
-                                    className="sidebar-icon" 
-                                    sx={{ color: temaAtual === 'claro' ? 'text.primary' : 'text.secondary' }} 
-                                />
+                                <PeopleAlt className="sidebar-icon" sx={{ color: tema === 'claro' ? '#000' : '#fff' }} />
                             </Link>
                         </Tooltip>
                     </li>
                     <li className="nav-item">
                         <Tooltip title="Notas fiscais" placement="right">
                             <Link href="/logado/notas_fiscais">
-                                <Article 
-                                    className="sidebar-icon" 
-                                    sx={{ color: temaAtual === 'claro' ? 'text.primary' : 'text.secondary' }} 
-                                />
+                                <Article className="sidebar-icon" sx={{ color: tema === 'claro' ? '#000' : '#fff' }} />
                             </Link>
                         </Tooltip>
                     </li>
                     <li className="nav-item">
                         <Tooltip title="Configurações" placement="right">
                             <Link href="/logado/configuracoes">
-                                <Settings 
-                                    className="sidebar-icon" 
-                                    sx={{ color: temaAtual === 'claro' ? 'text.primary' : 'text.secondary' }} 
-                                />
+                                <Settings className="sidebar-icon" sx={{ color: tema === 'claro' ? '#000' : '#fff' }} />
                             </Link>
                         </Tooltip>
                     </li>
@@ -140,7 +124,7 @@ const Sidebar = () => {
                             />
                         </div>
                     ) : (
-                        <Avatar sx={{ bgcolor: temaAtual === 'claro' ? 'primary.main' : 'secondary.main', width: 50, height: 50 }}>
+                        <Avatar sx={{ bgcolor: tema === 'claro' ? '#1976d2' : '#90caf9', width: 50, height: 50 }}>
                             {avatarLetra}
                         </Avatar>
                     )}
