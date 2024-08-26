@@ -1,0 +1,35 @@
+/* estilos/botoes.css */
+
+.botao {
+  padding: 10px 20px;
+  border-radius: 4px; /* Altere este valor para ajustar o arredondamento */
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+  
+  .botaoPrimario {
+    background-color: #0071ff;
+    color: #fff;
+  }
+  
+  .botaoPrimario:hover {
+    background-color: #005bb5;
+  }
+  
+  .botaoSecundario {
+    background-color: #f0f0f0;
+    color: #333;
+  }
+  
+  .botaoSecundario:hover {
+    background-color: #e0e0e0;
+  }
+  
+  .botaoDesativado {
+    background-color: #ccc;
+    color: #666;
+    cursor: not-allowed;
+  }
+  

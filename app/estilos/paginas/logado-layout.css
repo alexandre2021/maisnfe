@@ -1,0 +1,18 @@
+.logado-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 4.5rem;
+    background-color: #f8f9fa;
+    z-index: 1001;
+    /* O position: fixed; está no arquivo sidebar.css */
+}
+
+.content {
+    flex-grow: 1; /* Permite que o conteúdo ocupe o restante do espaço */
+    padding: 20px;
+    box-sizing: border-box; /* Garante que padding não aumente a largura total */
+    min-height: 100vh; /* Garante que o conteúdo tenha altura mínima de 100vh */
+}

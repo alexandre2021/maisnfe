@@ -1,0 +1,50 @@
+/* Modal Base */
+.modal-base {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    padding: 16px;
+    text-align: center;
+}
+
+/* Modal Overlay */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.75);
+}
+
+/* Modal para Sucesso */
+.modal-success {
+    border: 2px solid #007bff;
+}
+
+/* Modal para Erro */
+.modal-error {
+    border: 2px solid #ff4c4c;
+}
+
+/* Modal Header */
+.modal-header {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Modal Body */
+.modal-body {
+    margin-bottom: 1rem;
+}
+
+/* Modal Footer */
+.modal-footer {
+    display: flex;
+    justify-content: center;
+}

@@ -1,0 +1,40 @@
+.politicadeprivacidade-container {
+    max-width: 800px;
+    margin: 10px auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.politicadeprivacidade-h1{
+    color: #333;
+    margin-bottom: 20px;
+    font-weight: bold;
+    font-size: 20px;
+}
+
+.politicadeprivacidade-h2 {
+    color: #333;
+    margin-top:20px;
+    font-weight: bold;
+    font-size: 18px;
+
+}
+
+.politicadeprivacidade-p {
+    color: #555;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.politicadeprivacidade-ul {
+    list-style-type: disc;
+    margin-left: 20px;
+}
+
+.politicadeprivacidade-ul li {
+    margin-bottom: 10px;
+    font-size: 14px;
+}
