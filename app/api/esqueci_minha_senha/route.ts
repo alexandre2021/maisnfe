@@ -10,14 +10,13 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'E-mail é obrigatório.' }, { status: 400 });
         }
 
-        const redirectUrl = 'https://seusite.com/esqueci_minha_senha_senha';
+        // O redirecionamento agora aponta para a página correta de nova senha
+        const redirectUrl = 'https://seusite.com/nova_senha';
 
         // Enviar o e-mail de recuperação de senha
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
             redirectTo: redirectUrl,
         });
-
-
 
         if (error) {
             return NextResponse.json({ error: error.message }, { status: 500 });
@@ -29,3 +28,4 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Erro no servidor. Tente novamente mais tarde.' }, { status: 500 });
     }
 }
+
