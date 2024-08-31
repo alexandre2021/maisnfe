@@ -19,7 +19,6 @@ import { format } from 'date-fns';
 
 const Perfil = () => {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-    //const [user, setUser] = useState<any>(null);
     const [imageUrlBancoDeDados, setImageUrlBancoDeDados] = useState<string | null>(null);
     const [imageUrlTela, setImageUrlTela] = useState<string | null>(null);
     const [avatarLetra, setAvatarLetra] = useState<string>('');
@@ -36,6 +35,7 @@ const Perfil = () => {
     const [notificacaoEmail, setNotificacaoEmail] = useState(false);
     const [notificacaoWhatsapp, setNotificacaoWhatsapp] = useState(false);
     const [notificacaoPush, setNotificacaoPush] = useState(false);
+    const [tema, setTema] = useState<'claro' | 'escuro'>('claro');
     const [idioma, setIdioma] = useState('português');
     const [paginationModel, setPaginationModel] = React.useState({ page: 0, pageSize: 5 });
     const [autenticacao2fa, setAutenticacao2fa] = useState<string>('');
@@ -54,30 +54,65 @@ const Perfil = () => {
             try {
                 const { data: { session } } = await supabase.auth.getSession();
                 if (session) {
+
+                    // Verifica se o usuário passou pela verificação 2FA
+                    const { data: authData, error: authError } = await supabase
+                        .from('usuarios')
+                        .select('autenticacao_2fa, verificado_2fa')
+                        .eq('email', session.user.email)
+                        .single();
+    
+                    if (authError || !authData) {
+                        console.error('Erro ao verificar o 2FA:', authError?.message);
+                        setIsAuthenticated(false);
+                        router.push('/login'); // Redireciona para a página de login se houver erro
+                        return;
+                    }
+    
+                    if (authData.autenticacao_2fa && !authData.verificado_2fa) {
+                        console.warn('Usuário não passou pela verificação 2FA.');
+                        setIsAuthenticated(false);
+                        router.push('/login'); // Redireciona para a página de login
+                        return;
+                    }
+
                     setIsAuthenticated(true);
-                    if (typeof window !== 'undefined') {
-                        // Somente será executado no lado do cliente
+                    setIsLoading(true);
+
+                    // Busca os dados do usuário autenticado usando o email do session
+                    const { data: userData, error: userError } = await supabase
+                        .from('usuarios')
+                        .select(`
+                            id, nome, telefone,
+                            administrador, notificacao_email, notificacao_whatsapp,
+                            notificacao_push, idioma, email, url_2fa, segredo_2fa, tema
+                        `)
+                        
+                        .eq('email', session.user.email)
+                        .single();
+
+                    if (userError) {
+                        console.error('Erro ao buscar informações do usuário:', userError.message);
+                        router.push('/login'); // Redireciona para a página de login se houver erro
+                    } else {
+                        // Atualiza os estados com os dados do usuário
                         setImageUrlTela(sessionStorage.getItem('avatar_url') || '');
                         setImageUrlBancoDeDados(sessionStorage.getItem('avatar_url') || '');
                         setAvatarLetra(sessionStorage.getItem('avatar_letra') || 'A');
-                        setNome(sessionStorage.getItem('nome') || '');
-                        setTelefone(sessionStorage.getItem('telefone') || '');
-                        setAdministrador(sessionStorage.getItem('administrador') === 'true');
-                        setNotificacaoEmail(sessionStorage.getItem('notificacaoEmail') === 'true');
-                        setNotificacaoWhatsapp(sessionStorage.getItem('notificacaoWhatsapp') === 'true');
-                        setNotificacaoPush(sessionStorage.getItem('notificacaoPush') === 'true');
-                        setIdioma(sessionStorage.getItem('idioma') || 'português');
-                        setAutenticacao2fa(sessionStorage.getItem('autenticacao_2fa') || 'false');
-                        setUrl2fa(sessionStorage.getItem('url_2fa') || '');
-                        setSegredo2fa(sessionStorage.getItem('segredo_2fa') || '');
-                        setEmail(sessionStorage.getItem('email') || '');
+                        setNome(userData.nome || '');
+                        setTelefone(userData.telefone || '');
+                        setAdministrador(userData.administrador);
+                        setNotificacaoEmail(userData.notificacao_email || false);
+                        setNotificacaoWhatsapp(userData.notificacao_whatsapp || false);
+                        setNotificacaoPush(userData.notificacao_push || true);
+                        setIdioma(userData.idioma || 'português');
+                        setAutenticacao2fa(userData.url_2fa ? 'true' : 'false');
+                        setUrl2fa(userData.url_2fa || '');
+                        setSegredo2fa(userData.segredo_2fa || '');
+                        setEmail(userData.email || '');
+                        setTema(userData.tema as 'claro' | 'escuro');
 
-                        const storedEmail = sessionStorage.getItem('email');
-                        if (storedEmail) {
-                            setEmail(storedEmail);
-                        }
-
-                        const userId = sessionStorage.getItem('userId');
+                        const userId = userData.id;
 
                         // Carrega logs de atividade para a aba de segurança
                         const fetchLogsAtividade = async () => {
@@ -86,39 +121,34 @@ const Perfil = () => {
                                     .from('logs_atividade')
                                     .select('data_hora, ip, cidade, navegador')
                                     .eq('usuario_id', userId)
-                                    .order('data_hora', { ascending: false }); // Ordena do mais recente para o mais antigo
+                                    .order('data_hora', { ascending: false });
 
                                 if (error) {
                                     console.error('Erro ao buscar logs de atividade:', error);
                                 } else {
-                                    // Formata a data para string no formato desejado e cria arrays para opções de data e cidade
                                     const formattedData = data?.map((log, index) => ({
-                                        id: index, // Adiciona um id único baseado no índice começa em 0
+                                        id: index,
                                         ...log,
-                                        data_hora: format(new Date(log.data_hora), 'dd/MM/yyyy HH:mm')
+                                        data_hora: format(new Date(log.data_hora), 'dd/MM/yyyy HH:mm'),
                                     })) || [];
 
-                                    // Cria um conjunto único de datas e cidades
                                     const dateSet = new Set(formattedData.map(log => log.data_hora));
                                     const citySet = new Set(formattedData.map(log => log.cidade));
 
-                                    // Converte os conjuntos em arrays para serem usados como opções de seleção
                                     const dateOptions = Array.from(dateSet);
                                     const cityOptions = Array.from(citySet);
 
-                                    // Atualiza o estado com os logs formatados e as opções geradas
                                     setLogsAtividade(formattedData);
-                                    setDateOptions(dateOptions); // Certifique-se de ter o estado `dateOptions`
-                                    setCityOptions(cityOptions); // Certifique-se de ter o estado `cityOptions`
+                                    setDateOptions(dateOptions);
+                                    setCityOptions(cityOptions);
                                 }
                             } catch (error) {
                                 console.error('Erro inesperado ao buscar logs de atividade:', error);
                             }
                         };
 
-                        await fetchLogsAtividade(); // Certifique-se de aguardar a conclusão da função
+                        await fetchLogsAtividade();
 
-                        // Controle das abas e modal de sucesso após salvar
                         if (sessionStorage.getItem('reload') === 'sim') {
                             sessionStorage.removeItem('reload');
                             setSelectedTab(1);
@@ -132,7 +162,6 @@ const Perfil = () => {
                             });
                             setModalOpen(true);
                         }
-
                     }
                 } else {
                     setIsAuthenticated(false);
@@ -149,6 +178,7 @@ const Perfil = () => {
         checkAuth();
     }, [router]);
 
+
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0] || null;
         if (file) {
@@ -162,7 +192,7 @@ const Perfil = () => {
 
     const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
         setSelectedTab(newValue);
-    };    
+    };
 
     if (isAuthenticated === null) {
         return <div>Loading...</div>;
@@ -170,10 +200,9 @@ const Perfil = () => {
 
     const handleSavePessoal = async () => {
         try {
-            const email = sessionStorage.getItem('email'); // Obtém o email do sessionStorage
-
+            // Verifica se o email está disponível no estado
             if (!email) {
-                console.error('Email do usuário não encontrado no sessionStorage');
+                console.error('Email do usuário não disponível');
                 return;
             }
 
@@ -235,18 +264,18 @@ const Perfil = () => {
                 newAvatarUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/profiles/public/${uniqueFileName}`;
                 setImageUrlTela(newAvatarUrl);
                 setImageUrlBancoDeDados(newAvatarUrl);
-
-                // Atualiza no sessionStorage
-                sessionStorage.setItem('avatar_url', newAvatarUrl || '');
             }
 
-            // Atualiza as informações de perfil pessoal no banco de dados
+            // Atualiza as informações de perfil pessoal e notificações no banco de dados
             const { error: dbError } = await supabase
                 .from('usuarios')
                 .update({
                     avatar_url: newAvatarUrl,
                     nome,
                     telefone,
+                    notificacao_email: notificacaoEmail,
+                    notificacao_whatsapp: notificacaoWhatsapp,
+                    notificacao_push: notificacaoPush,
                 })
                 .eq('email', email);
 
@@ -260,13 +289,13 @@ const Perfil = () => {
                 return;
             }
 
-            // Atualiza sessionStorage com os novos valores
-            sessionStorage.setItem('nome', nome);
-            sessionStorage.setItem('telefone', telefone || '');
-
-            sessionStorage.setItem('salvaPessoal', 'sim')
-
-            window.location.reload();
+            // Exibe mensagem de sucesso após salvar
+            setModalContent({
+                title: 'Sucesso',
+                message: 'Dados salvos com sucesso!',
+                isSuccess: true,
+            });
+            setModalOpen(true);
 
         } catch (error) {
             if (error instanceof Error) {
@@ -290,13 +319,9 @@ const Perfil = () => {
 
     // Função para alternar o tema no estado e no sessionStorage e salvar no banco de dados
     const handleTemaChange = async (novoTema: 'claro' | 'escuro') => {
-
-        sessionStorage.setItem('tema', novoTema);
-
         try {
-            const email = sessionStorage.getItem('email'); // Obtém o email do sessionStorage
             if (!email) {
-                console.error('Email do usuário não encontrado no sessionStorage');
+                console.error('Email do usuário não disponível');
                 return;
             }
 
@@ -308,10 +333,11 @@ const Perfil = () => {
             if (error) {
                 console.error('Erro ao atualizar o tema no banco de dados:', error.message);
             } else {
-
-
+                // Atualiza o estado do tema
+                setTema(novoTema);
+                // Atualiza o sessionStorage para manter o tema sincronizado em toda a aplicação
+                sessionStorage.setItem('tema', novoTema);
                 // Aqui você pode adicionar um reload para aplicar o tema em todo o aplicativo
-                sessionStorage.setItem('reload', 'sim')
                 window.location.reload();
             }
         } catch (error) {
@@ -319,56 +345,12 @@ const Perfil = () => {
         }
     };
 
-    // Função para alterar preferências de notificações e salvar no banco de dados
-    const handleToggleNotification = async (type: 'email' | 'whatsapp' | 'push', value: boolean) => {
-        try {
-            const email = sessionStorage.getItem('email'); // Obtém o email do sessionStorage
-            if (!email) {
-                console.error('Email do usuário não encontrado no sessionStorage');
-                return;
-            }
-
-            // Atualiza o estado correspondente
-            switch (type) {
-                case 'email':
-                    setNotificacaoEmail(value);
-                    sessionStorage.setItem('notificacaoEmail', value.toString());
-                    break;
-                case 'whatsapp':
-                    setNotificacaoWhatsapp(value);
-                    sessionStorage.setItem('notificacaoWhatsapp', value.toString());
-                    break;
-                case 'push':
-                    setNotificacaoPush(value);
-                    sessionStorage.setItem('notificacaoPush', value.toString());
-                    break;
-            }
-
-            // Salva no banco de dados
-            const { error } = await supabase
-                .from('usuarios')
-                .update({
-                    notificacao_email: type === 'email' ? value : notificacaoEmail,
-                    notificacao_whatsapp: type === 'whatsapp' ? value : notificacaoWhatsapp,
-                    notificacao_push: type === 'push' ? value : notificacaoPush,
-                })
-                .eq('email', email);
-
-            if (error) {
-                console.error('Erro ao atualizar as notificações no banco de dados:', error.message);
-            }
-        } catch (error) {
-            console.error('Erro inesperado ao salvar as notificações:', error);
-        }
-    };
 
     // Função para alterar o idioma e salvar no banco de dados
     const handleIdiomaChange = async (novoIdioma: string) => {
         setIdioma(novoIdioma);
-        sessionStorage.setItem('idioma', novoIdioma);
 
         try {
-            const email = sessionStorage.getItem('email'); // Obtém o email do sessionStorage
             if (!email) {
                 console.error('Email do usuário não encontrado no sessionStorage');
                 return;
@@ -400,11 +382,11 @@ const Perfil = () => {
             setModalOpen(true);
             return;
         }
-    
+
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
             redirectTo: `http://localhost:3000/nova_senha?email=${email}`,
         });
-    
+
         if (error) {
             setModalContent({
                 title: 'Erro',
@@ -418,7 +400,7 @@ const Perfil = () => {
                 isSuccess: true,
             });
         }
-    
+
         setModalOpen(true);
     };
 
@@ -447,7 +429,7 @@ const Perfil = () => {
                 // Salvando o segredo e a URL no banco de dados
                 const { error } = await supabase
                     .from('usuarios')
-                    .update({ segredo_2fa: secret, autenticacao_2fa: false, url_2fa: qrCodeDataUrl })
+                    .update({ segredo_2fa: secret, url_2fa: qrCodeDataUrl, autenticacao_2fa: 'false' })
                     .eq('email', email);
 
                 if (error) {
@@ -500,11 +482,7 @@ const Perfil = () => {
                 return;
             }
 
-            console.log('Enviando requisição para /api/validar_totp com:', {
-                totpCode: codigo2fa,
-                userSecret: segredo2fa,
-            });
-
+            // Faz a requisição para validar o código 2FA
             const response = await fetch('/api/validar_totp', {
                 method: 'POST',
                 headers: {
@@ -524,14 +502,13 @@ const Perfil = () => {
                     console.error('Erro ao ativar o 2FA:', error.message);
                 } else {
                     sessionStorage.setItem('autenticacao_2fa', 'true');
-                    setAutenticacao2fa('true');
+                    setAutenticacao2fa('true');  // Linha mantida para atualizar o estado
                     setModalContent({
                         title: 'Sucesso',
                         message: 'Autenticação de dois fatores ativada com sucesso!',
                         isSuccess: true,
                     });
                     setModalOpen(true);
-                    setAutenticacao2fa('true');
                 }
             } else {
                 // Código inválido, exibe a modal de erro
@@ -566,6 +543,7 @@ const Perfil = () => {
                 .from('usuarios')
                 .update({ autenticacao_2fa: false, segredo_2fa: null, url_2fa: null })
                 .eq('email', email);
+
 
             if (error) {
                 console.error('Erro ao desativar o 2FA:', error.message);
@@ -741,7 +719,7 @@ const Perfil = () => {
                                     control={
                                         <Switch
                                             checked={notificacaoEmail}
-                                            onChange={(e) => handleToggleNotification('email', e.target.checked)}
+                                            onChange={(e) => setNotificacaoEmail(e.target.checked)}
                                         />
                                     }
                                     label="Email"
@@ -750,7 +728,7 @@ const Perfil = () => {
                                     control={
                                         <Switch
                                             checked={notificacaoWhatsapp}
-                                            onChange={(e) => handleToggleNotification('whatsapp', e.target.checked)}
+                                            onChange={(e) => setNotificacaoWhatsapp(e.target.checked)}
                                         />
                                     }
                                     label="WhatsApp"
@@ -759,7 +737,7 @@ const Perfil = () => {
                                     control={
                                         <Switch
                                             checked={notificacaoPush}
-                                            onChange={(e) => handleToggleNotification('push', e.target.checked)}
+                                            onChange={(e) => setNotificacaoPush(e.target.checked)}
                                         />
                                     }
                                     label="Push"
@@ -790,7 +768,7 @@ const Perfil = () => {
                                 <TextField
                                     label="Tema"
                                     variant="outlined"
-                                    value={sessionStorage.tema}
+                                    value={tema}
                                     onChange={(e) => handleTemaChange(e.target.value as 'claro' | 'escuro')}
                                     fullWidth
                                     margin="normal"
@@ -848,7 +826,7 @@ const Perfil = () => {
                                 />
                             </Box>
 
-                            {/* Autenticação de dois fatores */}                           
+                            {/* Autenticação de dois fatores */}
 
                             <Box sx={{ marginBottom: '20px' }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: '10px', marginTop: '10px' }}>
@@ -888,7 +866,7 @@ const Perfil = () => {
                                         </Box>
 
                                         {/* Box para o QR Code */}
-                                        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                                             <Image
                                                 src={url2fa}
                                                 alt="QR Code para autenticação 2FA"
@@ -906,13 +884,6 @@ const Perfil = () => {
                                     </Button>
                                 )}
                             </Box>
-
-
-
-
-
-
-
 
                         </Box>
 

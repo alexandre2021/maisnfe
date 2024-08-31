@@ -38,7 +38,7 @@ const Clientes = () => {
     }
 
     return (
-        <div>
+        <div style={{ padding: '20px' }}>
             <h1>Clientes</h1>
             {/* Adicione aqui o conteúdo específico da página de clientes */}
         </div>

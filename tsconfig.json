@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "lib": ["dom", "dom.iterable", "esnext"],
+    "target": "es2015",  // Ajuste o target para es2015 ou superior
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -23,10 +24,12 @@
     "paths": {
       "@/*": ["./*"]
     },
-    "types": ["node", "react", "react-dom"]
+    "types": ["node", "react", "react-dom"],
+    "downlevelIteration": true  // Adicione essa flag se necessário
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]
 }
+
 
 

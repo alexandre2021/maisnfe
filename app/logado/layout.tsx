@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Sidebar from './sidebar'; // Ajuste para receber o tema via props
+import Sidebar from './sidebar';
+import Topbar from './topbar';  // Importe o Topbar
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import '../estilos/globals.css';
 
@@ -49,11 +50,14 @@ export default function LogadoLayout({ children }: { children: React.ReactNode }
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
-            <div style={{ display: 'flex', minHeight: '100vh' }}>
-                <Sidebar tema={temaAtual} /> {/* Passando o tema para o Sidebar via props */}
-                <main style={{ flexGrow: 1, padding: '20px', marginLeft: '80px' }}>
-                    {children}
-                </main>
+            <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+                <Topbar tema={temaAtual} /> {/* Passando o tema para o Topbar */}
+                <div style={{ display: 'flex', flexGrow: 1 }}>
+                    <Sidebar tema={temaAtual} />
+                    <main style={{ flexGrow: 1, padding: '20px', marginLeft: '80px' }}>
+                        {children}
+                    </main>
+                </div>
             </div>
         </ThemeProvider>
     );

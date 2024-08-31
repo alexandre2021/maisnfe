@@ -61,10 +61,6 @@ ul li {
 @import 'componentes/formulario.css';
 @import 'componentes/sidebar.css';
 @import 'componentes/modal.css';
-@import 'paginas/cadastro.css';
-@import 'paginas/login.css';
-@import 'paginas/esqueci_minha_senha.css';
-@import 'paginas/reenviar_verificacao.css';
 @import 'paginas/politica_de_uso.css';
 @import 'paginas/politica_de_privacidade.css';
 @import 'paginas/logado-layout.css';

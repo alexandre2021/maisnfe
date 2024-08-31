@@ -38,7 +38,7 @@ const Dashboard = () => {
     }
 
     return (
-        <div>
+        <div style={{ padding: '20px' }}>
             <h1>Bem-vindo ao Dashboard</h1>
             {/* Adicione aqui o conteúdo específico do dashboard */}
         </div>

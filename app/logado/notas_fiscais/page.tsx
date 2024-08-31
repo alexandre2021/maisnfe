@@ -38,7 +38,7 @@ const NotasFiscais = () => {
     }
 
     return (
-        <div>
+        <div style={{ padding: '20px' }}>
             <h1>Notas Fiscais</h1>
             {/* Adicione aqui o conteúdo específico da página de notas fiscais */}
         </div>

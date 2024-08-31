@@ -1,49 +1,20 @@
-import React, { useEffect, useState } from 'react';
-import { Dashboard, PeopleAlt, Article, Settings, LogoDevOutlined } from '@mui/icons-material';
-import AccountBoxIcon from '@mui/icons-material/AccountBox';
-import { Avatar, Menu, MenuItem, IconButton, Tooltip, Box } from '@mui/material';
-import { supabase } from '../utils/supabase/client';
-import Image from 'next/image';
+import React from 'react';
+import { Dashboard, PeopleAlt, Article, Settings, LogoDevOutlined, AccountBox, ExitToApp } from '@mui/icons-material'; // Certifique-se de que o ExitToApp está importado
+import { Tooltip, Box, IconButton } from '@mui/material';
 import Link from 'next/link';
-
-// Defina o tipo para a prop 'tema'
+import { supabase } from '../utils/supabase/client'; // Importe o Supabase
 
 type SidebarProps = {
     tema: 'claro' | 'escuro';
 };
 
 const Sidebar: React.FC<SidebarProps> = ({ tema }) => {
-    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-    const [avatarLetra, setAvatarLetra] = useState<string>('');
-    const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-
-    useEffect(() => {
-        const storedAvatarLetra = sessionStorage.getItem('avatar_letra');
-        const storedAvatarUrl = sessionStorage.getItem('avatar_url') || '';
-
-        if (storedAvatarLetra) {
-            setAvatarLetra(storedAvatarLetra);
-        }
-
-        if (storedAvatarUrl && storedAvatarUrl !== '') {
-            setAvatarUrl(storedAvatarUrl);
-        } else {
-            setAvatarUrl(null);
-        }
-    }, []);
-
-    const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-        setAnchorEl(event.currentTarget);
-    };
-
-    const handleMenuClose = () => {
-        setAnchorEl(null);
-    };
-
     const handleLogout = async () => {
         const { error } = await supabase.auth.signOut();
         if (!error) {
             window.location.href = '/';
+        } else {
+            console.error('Erro ao fazer logout:', error.message);
         }
     };
 
@@ -81,7 +52,7 @@ const Sidebar: React.FC<SidebarProps> = ({ tema }) => {
                     <li className="nav-item">
                         <Tooltip title="Usuários" placement="right">
                             <Link href="/logado/usuarios">
-                                <AccountBoxIcon className="sidebar-icon" sx={{ color: tema === 'claro' ? '#000' : '#fff' }} />
+                                <AccountBox className="sidebar-icon" sx={{ color: tema === 'claro' ? '#000' : '#fff' }} />
                             </Link>
                         </Tooltip>
                     </li>
@@ -109,43 +80,14 @@ const Sidebar: React.FC<SidebarProps> = ({ tema }) => {
                 </ul>
             </div>
 
-            <div className="profile-section">
-                <IconButton onClick={handleMenuOpen} size="large">
-                    {avatarUrl ? (
-                        <div style={{ width: 50, height: 50, borderRadius: '50%', overflow: 'hidden' }}>
-                            <Image
-                                src={avatarUrl}
-                                alt="User Avatar"
-                                width={50}
-                                height={50}
-                                style={{ borderRadius: '50%' }}
-                                quality={100}
-                                priority
-                            />
-                        </div>
-                    ) : (
-                        <Avatar sx={{ bgcolor: tema === 'claro' ? '#1976d2' : '#90caf9', width: 50, height: 50 }}>
-                            {avatarLetra}
-                        </Avatar>
-                    )}
-                </IconButton>
-                <Menu
-                    anchorEl={anchorEl}
-                    open={Boolean(anchorEl)}
-                    onClose={handleMenuClose}
-                    anchorOrigin={{
-                        vertical: 'bottom',
-                        horizontal: 'center',
-                    }}
-                    transformOrigin={{
-                        vertical: 'top',
-                        horizontal: 'center',
-                    }}
-                >
-                    <MenuItem onClick={() => window.location.href = '/logado/perfil'}>Perfil</MenuItem>
-                    <MenuItem onClick={handleLogout}>Sair</MenuItem>
-                </Menu>
-            </div>
+            {/* Botão de Logout */}
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                <Tooltip title="Logout" placement="right">
+                    <IconButton size="large" onClick={handleLogout} sx={{ color: tema === 'claro' ? '#000' : '#fff' }}>
+                        <ExitToApp />
+                    </IconButton>
+                </Tooltip>
+            </Box>
         </Box>
     );
 };

@@ -167,14 +167,7 @@
     opacity: 1;
 }
 
-.formulario-elementos:required {
-    border-left: 4px solid red;
-    /* Example: a red left border to indicate required field */
-}
 
-input[required] {
-    border-left: 4px solid red;
-}
 
 /* Estilos específicos para Textarea */
 textarea.formulario-elementos {
@@ -192,17 +185,7 @@ select.formulario-elementos {
     background-size: 16px 16px;
 }
 
-/* Estilos para campos obrigatórios */
-.formulario-obrigatorio {
-    color: red;
-    margin-left: 0.25rem;
-}
 
-.formulario-obrigatorio-nota {
-    color: #dc3545;
-    font-size: 0.875rem;
-    margin-top: 0.3rem;
-}
 
 
 /* Estilos para exibir senha */

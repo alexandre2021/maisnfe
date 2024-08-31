@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
+import { TextField, Button, Box, Typography } from '@mui/material';
 import CustomModal from '../componentes/modal'; // Usando a CustomModal já criada
+import Link from 'next/link';
 
 export default function EsqueciMinhaSenha() {
     const [email, setEmail] = useState<string>('');
@@ -15,6 +17,7 @@ export default function EsqueciMinhaSenha() {
             window.location.href = '/login';
         }
     };
+
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -47,28 +50,98 @@ export default function EsqueciMinhaSenha() {
     };
 
     return (
-        <div className="esqueci-senha-container">
-            <form className="esqueci-senha-form" onSubmit={handleSubmit}>
-                <h2 className="mb-4">Recuperar Senha</h2>
-                <div className="mb-3">
-                    <label htmlFor="email" className="formulario-label">Endereço de e-mail</label>
-                    <input
-                        type="email"
-                        className="formulario-elementos"
-                        id="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                    />
-                </div>
-                <button type="submit" className="botao botaoPrimario w-100">Enviar</button>
-                <div className="mt-3 text-center">
-                    <a href="/login" className="text-decoration-none">Voltar para o Login</a>
-                </div>
-                <div className="mt-3 text-center">
-                    <a href="/cadastro" className="text-decoration-none">Ainda não tem uma conta? Cadastre-se</a>
-                </div>
-            </form>
+        <Box
+            sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100vh',
+                flexDirection: 'column',
+            }}
+        >
+            <Box
+                component="form"
+                onSubmit={handleSubmit}
+                sx={{
+                    width: 350,
+                    padding: 2,
+                    borderRadius: 2,
+                    boxShadow: 4,
+                    border: '1px solid #ccc',
+                }}
+            >
+                <Typography
+                    variant="h5"
+                    sx={{
+                        textAlign: 'center',
+                        fontWeight: 'bold',
+                        marginBottom: 3,
+                        marginTop: 0,
+                    }}
+                >
+                    Esqueci minha senha
+                </Typography>
+                <TextField
+                    id="email"
+                    label="Endereço de e-mail"
+                    type="email"
+                    variant="outlined"
+                    fullWidth
+                    required
+                    sx={{ marginBottom: 2 }}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                />
+                <Button
+                    type="submit"
+                    variant="contained"
+                    color="primary"
+                    fullWidth
+                    sx={{
+                        paddingTop: 1,
+                        paddingBottom: 1,
+                        marginBottom: 2,
+                    }}
+                >
+                    Enviar
+                </Button>
+                <Typography
+                    variant="body2"
+                    sx={{
+                        marginTop: 1,
+                        textAlign: 'center',
+                        color: '#007bff',
+                    }}
+                >
+                    <Link href="/login" style={{ textDecoration: 'none', color: '#007bff' }}>
+                        Voltar para o Login
+                    </Link>
+                </Typography>
+
+                <Typography
+                    variant="body2"
+                    sx={{
+                        marginTop: 1,
+                        textAlign: 'center',
+                        color: '#007bff',
+                    }}
+                >
+                    <Link href="/cadastro" style={{ textDecoration: 'none', color: '#007bff' }}>
+                        Ainda não tem uma conta? Cadastre-se
+                    </Link>
+                </Typography>
+            </Box>
+
+            <Typography
+                variant="body2"
+                sx={{
+                    color: 'gray',
+                    textAlign: 'center',
+                    marginTop: 2,
+                }}
+            >
+                * campo obrigatório
+            </Typography>
 
             <CustomModal
                 open={modalOpen}
@@ -77,7 +150,7 @@ export default function EsqueciMinhaSenha() {
                 message={modalMessage}
                 isSuccess={isSuccess}
             />
-        </div>
+        </Box>
     );
 }
 

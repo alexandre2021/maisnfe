@@ -2,20 +2,24 @@
 
 import React, { useState, FormEvent } from 'react';
 import { supabase } from '../utils/supabase/client';
-//import CpfCnpjInput from 'react-cpf-cnpj-input';
+import { Box, Typography, TextField, Button, Checkbox, Link, IconButton } from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { InputAdornment } from '@mui/material';
 import CustomModal from '../componentes/modal';
+import InputMask from 'react-input-mask';
+
 
 export default function Cadastro() {
-  const [nome, setnome] = useState<string>('');
+  const [nome, setNome] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [cnpj, setCnpj] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [confirmPassword, setConfirmPassword] = useState<string>('');
+  const [passwordError, setPasswordError] = useState<string>('');
   const [acceptPolicies, setAcceptPolicies] = useState<boolean>(false);
   const [modalOpen, setModalOpen] = useState<boolean>(false);
   const [modalMessage, setModalMessage] = useState<string>('');
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
-  const [passwordError, setPasswordError] = useState<string>('');
   const [emailError, setEmailError] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
@@ -128,7 +132,7 @@ export default function Cadastro() {
         .select('id')
         .eq('cnpj', cnpj)
         .maybeSingle(); // Usa maybeSingle para retornar null se nenhum ou múltiplos registros forem encontrados
-        
+
       if (existingEmpresa) {
         setModalMessage('Este CNPJ já está em uso.');
         setIsSuccess(false);
@@ -139,13 +143,13 @@ export default function Cadastro() {
       if (empresaError) {
         console.error('Erro ao consultar a tabela empresas:', empresaError.message);
         if (empresaError.code !== 'PGRST116') {
-            setModalMessage('Erro ao verificar o CNPJ.');
-            setIsSuccess(false);
-            setModalOpen(true);
-            return;
+          setModalMessage('Erro ao verificar o CNPJ.');
+          setIsSuccess(false);
+          setModalOpen(true);
+          return;
         }
-    }
-    
+      }
+
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -182,140 +186,192 @@ export default function Cadastro() {
   };
 
   return (
-    <div className="cadastro-flex-container vh-100">
-      <form className="cadastro-form" onSubmit={handleSubmit} noValidate>
-        <h2 className="mb-4">Cadastre-se</h2>
-        <div className="mb-3">
-          <label htmlFor="nome" className="formulario-label">Responsável</label>
-          <input
-            type="text"
-            className="formulario-elementos"
-            id="nome"
-            value={nome}
-            onChange={(e) => setnome(e.target.value)}
-            required
-          />
-        </div>
-        <div className="mb-3">
-          <label htmlFor="email" className="formulario-label">Endereço de e-mail</label>
-          <input
-            type="email"
-            className="formulario-elementos"
-            id="email"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              setEmailError('');
-            }}
-            required
-            pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$"
-            title="Por favor, insira um endereço de e-mail válido."
-          />
-          {emailError && <p className="error-message">{emailError}</p>}
-        </div>
-        <div className="mb-3">
-          <label htmlFor="cnpj" className="formulario-label">CNPJ</label>
+    <Box
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+      height="auto"
+      flexDirection="column"
+      sx={{
+        padding: 1,
+        maxWidth: '90vw',
+      }}
+    >
+      <Box
+        component="form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSubmit(e);
+        }}
+        noValidate
+        sx={{
+          width: 390,
+          padding: 1.5, // Reduzi o padding
+          borderRadius: 2,
+          boxShadow: 4,
+          border: '1px solid #ccc',
+        }}
+      >
+        <Typography variant="h5"
+          sx={{
+            textAlign: 'center',
+            fontWeight: 'bold',
+            marginBottom: 1.5,
+            marginTop: 0,
+          }}
+        >
+          Cadastre-se
+        </Typography>
 
-
-          
-
-          
-        {/* <CpfCnpjInput
-            type="cnpj"
-            value={cnpj}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCnpj(e.target.value)}
-            className="formulario-elementos"
-            required
-        /> */}
-
-
-        <input
-            type="text"
-            value={cnpj}
-            onChange={(e) => setCnpj(e.target.value)}
-            className="formulario-elementos"
-            required
+        <TextField
+          label="Responsável"
+          variant="outlined"
+          fullWidth
+          required
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+          sx={{
+            mb: 1.5,
+            '& .MuiInputBase-root': {
+              padding: '0.8px', // Reduz a altura do input
+            },
+            '& .MuiOutlinedInput-root': {
+              fontSize: '0.875rem', // Opcional: diminuir o tamanho da fonte para melhor ajuste
+            },
+          }}
         />
 
+        <TextField
+          label="Endereço de e-mail"
+          type="email"
+          variant="outlined"
+          fullWidth
+          required
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            setEmailError('');
+          }}
+          error={!!emailError}
+          helperText={emailError}
+          sx={{
+            mb: 1.5,
+            '& .MuiInputBase-root': {
+              padding: '0.8px',
+            },
+            '& .MuiOutlinedInput-root': {
+              fontSize: '0.875rem',
+            },
+          }}
+        />
+        <TextField
+          label="CNPJ"
+          variant="outlined"
+          fullWidth
+          required
+          value={cnpj}
+          onChange={(e) => setCnpj(e.target.value)}
+          /* o inputProps precisa ficar dentro do textField */
+          InputProps={{
+            inputComponent: InputMask as any,
+            inputProps: { mask: '99.999.999/9999-99' },
+          }}
+          sx={{
+            mb: 1.5,
+            '& .MuiInputBase-root': {
+              padding: '0.8px',
+            },
+            '& .MuiOutlinedInput-root': {
+              fontSize: '0.875rem',
+            },
+          }}
+        />
+        <TextField
+          label="Senha"
+          variant="outlined"
+          type={showPassword ? 'text' : 'password'}
+          fullWidth
+          required
+          value={password}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            setPasswordError(validatePassword(e.target.value));
+          }}
+          error={Boolean(passwordError)}
+          helperText={passwordError}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={() => setShowPassword(!showPassword)}
+                  edge="end"
+                >
+                  {showPassword ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+          sx={{ marginBottom: 3 }}
+        />
 
+        <TextField
+          label="Confirme a Senha"
+          variant="outlined"
+          type={showConfirmPassword ? 'text' : 'password'}
+          fullWidth
+          required
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          error={password !== confirmPassword}
+          helperText={password !== confirmPassword ? 'As senhas não coincidem.' : ''}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  edge="end"
+                >
+                  {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+          sx={{ marginBottom: 1.5 }}
+        />
 
-
-
-
-        </div>
-        <div className="mb-3">
-          <label htmlFor="password" className="formulario-label">Senha</label>
-          <div className="password-container">
-            <input
-              type={showPassword ? "text" : "password"}
-              className="formulario-elementos"
-              id="password"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setPasswordError(validatePassword(e.target.value));
-              }}
-              required
-            />
-            <button
-              type="button"
-              className="show-password-btn"
-              onMouseDown={() => setShowPassword(true)}
-              onMouseUp={() => setShowPassword(false)}
-              onMouseLeave={() => setShowPassword(false)}
-            >
-              👁️
-            </button>
-          </div>
-          {passwordError && (
-            <p className="error-message" style={{ fontSize: '12px', color: 'red' }}>
-              {passwordError}
-            </p>
-          )}
-        </div>
-        <div className="mb-3">
-          <label htmlFor="confirmPassword" className="formulario-label">Confirme a Senha</label>
-          <div className="password-container">
-            <input
-              type={showConfirmPassword ? "text" : "password"}
-              className="formulario-elementos"
-              id="confirmPassword"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
-            <button
-              type="button"
-              className="show-password-btn"
-              onMouseUp={() => setShowConfirmPassword(false)}
-              onMouseDown={() => setShowConfirmPassword(true)}
-              onMouseLeave={() => setShowConfirmPassword(false)}
-            >
-              👁️
-            </button>
-          </div>
-        </div>
-        <div className="mb-3 formulario-checkbox-container">
-          <input
-            type="checkbox"
-            id="acceptPolicies"
-            required
+        <Box display="flex" alignItems="center" mb={1.5}>
+          <Checkbox
             checked={acceptPolicies}
             onChange={() => setAcceptPolicies(!acceptPolicies)}
-            className="formulario-checkbox"
+            required
+            sx={{ marginRight: 0 }}
           />
-          <label htmlFor="acceptPolicies" className="formulario-checkbox-label">
-            Aceito a <a href="/politica_de_privacidade" target="_blank" className="link-termos">Política de privacidade</a> e a <a href="/politica_de_uso" target="_blank" className="link-termos">Política de uso</a>
-          </label>
-        </div>
-        <button type="submit" className="botao botaoPrimario w-100">Cadastrar</button>
-        <div className="mt-3 text-center">
-          <a href="/login" className="text-decoration-none">Já tem uma conta? Login</a>
-        </div>
-      </form>
-      <div className="mt-3 text-center">
-        <p className="formulario-obrigatorio-nota">* Campos obrigatórios</p>
-      </div>
+          <Typography variant="body2">
+            Aceito <Link href="/politica_de_privacidade" target="_blank">Política de privacidade</Link> e <Link href="/termo_de_uso" target="_blank">Termo de uso</Link>
+            <span style={{ color: 'gray', marginLeft: '3px' }}>*</span>
+          </Typography>
+        </Box>
+
+
+        <Button type="submit" variant="contained" color="primary" fullWidth sx={{ py: 1 }}>
+          Cadastrar
+        </Button>
+
+        <Typography variant="body2" align="center" mt={1.5}>
+          <Link href="/login">Já tem uma conta? Login</Link>
+        </Typography>
+      </Box>
+
+      <Typography
+        variant="body2"
+        sx={{
+          color: 'gray',
+          textAlign: 'center',
+          marginTop: 1.5,
+        }}
+      >
+        * campo obrigatório
+      </Typography>
 
       <CustomModal
         open={modalOpen}
@@ -324,7 +380,10 @@ export default function Cadastro() {
         message={modalMessage}
         isSuccess={isSuccess}
       />
-    </div>
+
+
+
+    </Box>
   );
 }
 

@@ -2,13 +2,16 @@
 
 import React, { useState } from 'react';
 import { supabase } from '../utils/supabase/client';
+import { TextField, Button, Box, Typography, IconButton, InputAdornment, Modal } from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import CustomModal from '../componentes/modal';
-//import Avatar from '@mui/material/Avatar';
+import Link from 'next/link';
 
 // Reintroduzindo as variáveis de controle de tempo
 let lastRequestTimeCnpja: number | null = null;
 let lastRequestTimeCnpjws: number | null = null;
 
+// Função para aguardar o tempo necessário entre as requisições
 async function waitIfNeeded(apiType: 'cnpja' | 'cnpjws') {
     const lastRequestTime = apiType === 'cnpja' ? lastRequestTimeCnpja : lastRequestTimeCnpjws;
     const waitTime = apiType === 'cnpja' ? 12000 : 20000;
@@ -68,7 +71,6 @@ async function processCNPJData(email: string, nome: string, cnpj: string) {
     // Tentar buscar os dados na API cnpja
     try {
         const dataCnpja = await fetchCNPJFromCnpja(formattedCnpj);
-
         if (dataCnpja) {
             empresaData = {
                 razao_social: dataCnpja.company.name,
@@ -137,8 +139,6 @@ async function processCNPJData(email: string, nome: string, cnpj: string) {
         return;
     }
 
-    console.log("Empresa criada:", empresa);
-
     // Cria o usuário na tabela usuarios
     const { data: usuarioData, error: usuarioError } = await supabase
         .from('usuarios')
@@ -168,8 +168,6 @@ async function processCNPJData(email: string, nome: string, cnpj: string) {
         return;
     }
 
-    console.log("Empresa atualizada com o ID do usuário");
-
     // Exclui o registro da tabela pesquisa_cnpj
     await supabase
         .from('pesquisa_cnpj')
@@ -186,45 +184,203 @@ export default function Login() {
     const [isSuccess, setIsSuccess] = useState(false);
     const [showPassword, setShowPassword] = useState(false); // Adiciona o estado para controlar a visibilidade da senha
     const [totpCode, setTotpCode] = useState('');
-    const [usuarioData] = useState<any>(null);
+    const [isTotpModalOpen, setIsTotpModalOpen] = useState(false);
+
 
 
     const handleCloseModal = () => {
         setModalOpen(false);
     };
 
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
-        try {
-            const { data: user, error } = await supabase.auth.signInWithPassword({
-                email,
-                password,
+        // Prossegue com o login
+        const { error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        });
+
+        if (error) {
+            console.error("Erro ao fazer login:", error.message);
+            if (error.message === 'Email not confirmed') {
+                setModalTitle('E-mail não verificado');
+                setModalMessage('Sua conta ainda não foi confirmada. Por favor, siga as instruções no email que lhe enviamos.');
+            } else if (error.message === 'Invalid login credentials') {
+                setModalTitle('Erro ao fazer login');
+                setModalMessage('E-mail ou senha incorretos.');
+            } else if (error.message === 'User not found') {
+                setModalTitle('Erro ao fazer login');
+                setModalMessage('Usuário não cadastrado.');
+            } else {
+                setModalTitle('Erro ao fazer login');
+                setModalMessage('Ocorreu um erro. Por favor, tente mais tarde.');
+            }
+            setIsSuccess(false);
+            setModalOpen(true);
+            return;
+        } else {
+            const { error: dbError } = await supabase
+                .from('usuarios')
+                .update({
+                    verificado_2fa: false,
+                })
+                .eq('email', email);
+
+            if (dbError) {
+                // Se houver erro ao buscar a informação de autenticacao_2fa, encerrar a sessão
+                console.error('Erro ao buscar informações no banco de dados:', dbError.message);
+                await supabase.auth.signOut();
+                return;
+            }
+            // Nesse ponto o login foi feito com sucesso
+            // Buscar dados do usuário para outras informações
+            const { data: userData, error: userError } = await supabase
+                .from('usuarios')
+                .select('autenticacao_2fa, id, empresa_id, tema')
+                .eq('email', email)
+                .single();
+            if (userError) {
+                // Se houver erro ao buscar a informação de autenticacao_2fa, encerrar a sessão
+                console.error('Erro ao buscar informações do usuário:', userError.message);
+                await supabase.auth.signOut();
+                return;
+            } else {
+                // Nesse ponto o login foi feito com sucesso e tenho informação sobre 2fa
+                if (userData.autenticacao_2fa) {
+                    // autenticacao_2fa é verdadeira, então abrir o modal para capturar o código TOTP
+                    setIsTotpModalOpen(true);
+                    return;
+                } else {
+                    // autenticacao_2fa é falsa, então prosseguir com pesquisa de CNPJ e pesquisa de IP
+
+                    // Precisa para renderizar loga na carga da página
+                    sessionStorage.setItem('tema', userData.tema);
+
+                    // Verifica se é um administrador que está fazendo o primeiro login
+                    const { data: pesquisaData } = await supabase
+                        .from('pesquisa_cnpj')
+                        .select('cnpj, nome')
+                        .eq('email', email)
+                        .single();
+
+                    if (pesquisaData) {
+                        // Passar email, nome e cnpj diretamente para a função
+                        await processCNPJData(email, pesquisaData.nome, pesquisaData.cnpj);
+                    }
+
+                    // Chama a rota da API para obter o IP, o navegador e a cidade
+                    const ipResponse = await fetch('/api/pegar_ip');
+                    const { ip, userAgent, city } = await ipResponse.json();
+
+                    // Registrar o log de atividade de login
+
+                    const { error: logError } = await supabase
+                        .from('logs_atividade')
+                        .insert([{
+                            usuario_id: userData.id,
+                            tipo_atividade: 'login',
+                            data_hora: new Date(),
+                            ip,
+                            navegador: userAgent,
+                            cidade: city || 'Cidade não disponível',
+                            empresa_id: userData.empresa_id,
+                        }]);
+
+                    if (logError) {
+                        console.error('Erro ao registrar log de atividade:', logError.message);
+                    }
+
+                    // Redireciona para a home/dashboard
+                    window.location.href = 'logado/dashboard';
+                }
+            }
+        }
+    };
+
+    const handleTotpSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+
+        // Obtém a sessão do Supabase
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+        if (sessionError) {
+            console.error('Erro ao obter a sessão:', sessionError.message);
+            return;
+        }
+
+        const email = session?.user?.email;
+
+        if (!email) {
+            console.error('Email não encontrado.');
+            await supabase.auth.signOut();
+            return;
+        }
+
+        const totpInput = document.getElementById('totp-code') as HTMLInputElement | null;
+
+        if (totpInput !== null) {
+            const totpCode = totpInput.value;
+
+            // Buscar os dados do usuário necessários para validação
+            const { data: userData, error: userError } = await supabase
+                .from('usuarios')
+                .select('segredo_2fa, id, empresa_id, tema')
+                .eq('email', email)
+                .single();
+
+            if (userError) {
+                console.error('Erro ao buscar informações do usuário:', userError.message);
+                await supabase.auth.signOut();
+                return;
+            }
+
+            if (!userData?.segredo_2fa) {
+                console.error('Segredo TOTP não encontrado.');
+                await supabase.auth.signOut();
+                return;
+            }
+
+            // Valida o código TOTP usando o segredo recuperado
+            const response = await fetch('/api/validar_totp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ totpCode, userSecret: userData.segredo_2fa }),
             });
 
-            if (error) {
-                console.error("Erro ao fazer login:", error.message);
+            const result = await response.json();
 
-                if (error.message === 'Email not confirmed') {
-                    setModalTitle('E-mail não verificado');
-                    setModalMessage('Sua conta ainda não foi confirmada. Por favor, siga as instruções no email que lhe enviamos.');
-                } else if (error.message === 'Invalid login credentials') {
-                    setModalTitle('Erro ao fazer login');
-                    setModalMessage('E-mail ou senha incorretos.');
-                } else if (error.message === 'User not found') {
-                    setModalTitle('Erro ao fazer login');
-                    setModalMessage('Usuário não cadastrado.');
-                } else {
-                    setModalTitle('Erro ao fazer login');
-                    setModalMessage('Ocorreu um erro. Por favor, tente mais tarde.');
-                }
-
+            if (!response.ok || !result.success) {
+                setModalTitle('Erro');
+                setModalMessage('Código 2FA inválido.');
                 setIsSuccess(false);
                 setModalOpen(true);
                 return;
             }
 
-            // Verifica se é um administrador que está fazendo o primeiro login
+            // Para evitar que mesmo sem informar o código 2FA, o usuário consiga acessar a página
+            // Nas páginas logadas se autenticacao_2fa for true e verificado_2fa for false, redirecionar para a página de login
+
+            const { error: dbError } = await supabase
+            .from('usuarios')
+            .update({
+                verificado_2fa: true,
+            })
+            .eq('email', email);
+
+            if (dbError) {
+                // Se houver erro ao buscar a informação de autenticacao_2fa, encerrar a sessão
+                console.error('Erro ao buscar informações no banco de dados:', dbError.message);
+                await supabase.auth.signOut();
+                return;
+            }
+
+            // Precisa para renderizar loga na carga da página
+            sessionStorage.setItem('tema', userData.tema);
+
             const { data: pesquisaData } = await supabase
                 .from('pesquisa_cnpj')
                 .select('cnpj, nome')
@@ -236,179 +392,208 @@ export default function Login() {
                 await processCNPJData(email, pesquisaData.nome, pesquisaData.cnpj);
             }
 
-            // Buscar dados do usuário para verificar se 2FA está ativo e trazer outras informações
-            const { data: userData, error: userError } = await supabase
-                .from('usuarios')
-                .select(`
-                    id, autenticacao_2fa, segredo_2fa,url_2fa, avatar_letra, avatar_url, nome, telefone,
-                    administrador, empresa_id, tema, notificacao_email, notificacao_whatsapp,
-                    notificacao_push, idioma, email
-                `)
-                .single();
-
-            if (userError) {
-                console.error('Erro ao buscar informações do usuário:', userError.message);
-            } else {
-                // Armazenar os dados no sessionStorage
-                sessionStorage.setItem('userId', userData.id);
-                sessionStorage.setItem('email', userData.email);
-                sessionStorage.setItem('avatar_letra', userData.avatar_letra);
-                sessionStorage.setItem('avatar_url', userData.avatar_url || '');
-                sessionStorage.setItem('nome', userData.nome);
-                sessionStorage.setItem('telefone', userData.telefone || '');
-                sessionStorage.setItem('administrador', userData.administrador);
-                sessionStorage.setItem('empresa_id', userData.empresa_id);
-                sessionStorage.setItem('tema', userData.tema);
-                //usado na tela perfil aba configuração para aplicar o tema somente em perfil antes de salvar
-                sessionStorage.setItem('temaSelecionado', userData.tema);
-                sessionStorage.setItem('notificacaoEmail', userData.notificacao_email || false);
-                sessionStorage.setItem('notificacaoWhatsapp', userData.notificacao_whatsapp || false);
-                sessionStorage.setItem('notificacaoPush', userData.notificacao_push || true);
-                sessionStorage.setItem('idioma', userData.idioma);
-                sessionStorage.setItem('autenticacao_2fa', userData.autenticacao_2fa);
-                sessionStorage.setItem('segredo_2fa', userData.segredo_2fa || '');
-                sessionStorage.setItem('url_2fa', userData.url_2fa || '');
-            }
-
-            if (userData?.autenticacao_2fa) {
-                // Exibir campo para o código TOTP
-                if (!totpCode) {
-                    setModalTitle('Código 2FA');
-                    setModalMessage('Insira o código do Google Authenticator.');
-                    setIsSuccess(false);
-                    setModalOpen(true);
-                    return;
-                }
-
-                // Validar o código TOTP via backend
-                const response = await fetch('/api/2fa', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ userId: user.user?.id, totpCode }),
-                });
-
-                const result = await response.json();
-
-                if (!response.ok || !result.isValid) {
-                    setModalTitle('Erro');
-                    setModalMessage('Código 2FA inválido.');
-                    setIsSuccess(false);
-                    setModalOpen(true);
-                    return;
-                }
-            }
-
             // Chama a rota da API para obter o IP, o navegador e a cidade
             const ipResponse = await fetch('/api/pegar_ip');
             const { ip, userAgent, city } = await ipResponse.json();
 
             // Registrar o log de atividade de login
-            if (userData) {
-                const { error: logError } = await supabase
-                    .from('logs_atividade')
-                    .insert([{
-                        usuario_id: userData.id, // Usando o ID do usuário recuperado
-                        tipo_atividade: 'login',
-                        data_hora: new Date(),
-                        ip,
-                        navegador: userAgent,
-                        cidade: city || 'Cidade não disponível', // Associa a cidade recuperada ou um valor padrão
-                        empresa_id: userData.empresa_id,  // Associa a empresa também
-                    }]);
 
-                if (logError) {
-                    console.error('Erro ao registrar log de atividade:', logError.message);
-                }
-            } else {
-                console.error('Erro: userData é nulo.');
+            const { error: logError } = await supabase
+                .from('logs_atividade')
+                .insert([{
+                    usuario_id: userData.id,
+                    tipo_atividade: 'login',
+                    data_hora: new Date(),
+                    ip,
+                    navegador: userAgent,
+                    cidade: city || 'Cidade não disponível',
+                    empresa_id: userData.empresa_id,
+                }]);
+
+            if (logError) {
+                console.error('Erro ao registrar log de atividade:', logError.message);
             }
-            
+
             // Redireciona para a home/dashboard
             window.location.href = 'logado/dashboard';
 
-        } catch (error) {
-            console.error('Erro inesperado:', (error as Error).message);
-            setModalTitle('Erro inesperado');
-            setModalMessage('Ocorreu um erro inesperado. Tente novamente mais tarde.');
+        } else {
+            setModalTitle('Erro');
+            setModalMessage('Código 2FA inválido. Tente novamente.');
             setIsSuccess(false);
             setModalOpen(true);
         }
     };
 
+
+
+    const togglePasswordVisibility = () => {
+        setShowPassword((prevShowPassword) => !prevShowPassword);
+    };
+
     return (
-        <div className="login-flex-container">
-            <form className="login-form" onSubmit={handleSubmit}>
-                <h2 className="mb-4">Login</h2>
-                <div className="mb-3">
-                    <label htmlFor="email" className="formulario-label">Endereço de e-mail</label>
-                    <input
-                        type="email"
-                        className="formulario-elementos"
-                        id="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                    />
-                </div>
-                <div className="mb-3">
-                    <label htmlFor="password" className="formulario-label">Senha</label>
-                    <div className="password-container">
-                        <input
-                            type={showPassword ? "text" : "password"}
-                            className="formulario-elementos"
-                            id="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                        />
-                        <button
-                            type="button"
-                            className="show-password-btn"
-                            onMouseDown={() => setShowPassword(true)}
-                            onMouseUp={() => setShowPassword(false)}
-                            onMouseLeave={() => setShowPassword(false)}
+        <Box
+            sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100vh',
+                flexDirection: 'column',
+            }}
+        >
+            <Box
+                component="form"
+                onSubmit={handleSubmit}
+                sx={{
+                    width: 350,
+                    padding: 2,
+                    borderRadius: 2,
+                    boxShadow: 4,
+                    border: '1px solid #ccc',
+                }}
+            >
+                <Typography
+                    variant="h5"
+                    sx={{
+                        textAlign: 'center',
+                        fontWeight: 'bold',
+                        marginBottom: 3,
+                        marginTop: 0,
+                    }}
+                >
+                    Login
+                </Typography>
+                <TextField
+                    label="Email"
+                    variant="outlined"
+                    fullWidth
+                    required
+                    sx={{ marginBottom: 2 }}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                />
+                <TextField
+                    label="Senha"
+                    variant="outlined"
+                    type={showPassword ? 'text' : 'password'}
+                    fullWidth
+                    required
+                    sx={{ marginBottom: 3 }}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    InputProps={{
+                        endAdornment: (
+                            <InputAdornment position="end">
+                                <IconButton
+                                    onClick={togglePasswordVisibility}
+                                    edge="end"
+                                >
+                                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                                </IconButton>
+                            </InputAdornment>
+                        ),
+                    }}
+                />
+                <Button
+                    type="submit"
+                    variant="contained"
+                    color="primary"
+                    fullWidth
+                    sx={{
+                        paddingTop: 1,
+                        paddingBottom: 1,
+                        marginBottom: 2,
+                    }}
+                >
+                    ENTRAR
+                </Button>
+
+                {/* Modal para capturar totp */}
+                <Modal
+                    open={isTotpModalOpen}
+                    onClose={() => setIsTotpModalOpen(false)}
+                    aria-labelledby="modal-totp-title"
+                    aria-describedby="modal-totp-description"
+                >
+                    <Box
+                        sx={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            width: 300,
+                            bgcolor: 'background.paper',
+                            borderRadius: 2,
+                            boxShadow: 24,
+                            p: 3,
+                            textAlign: 'center',
+                        }}
+                    >
+                        <Typography
+                            id="modal-totp-title"
+                            variant="h6"
+                            component="h2"
+                            sx={{ marginBottom: 2 }}
                         >
-                            👁️
-                        </button>
-                    </div>
+                            Código 2FA
+                        </Typography>
+                        <TextField
+                            id="totp-code"
+                            label="Insira o código"
+                            variant="outlined"
+                            fullWidth
+                            value={totpCode}
+                            onChange={(e) => setTotpCode(e.target.value)}
+                            sx={{ marginBottom: 2 }}
+                        />
+                        <Button
+                            variant="contained"
+                            onClick={handleTotpSubmit}
+                            fullWidth
+                        >
+                            Verificar
+                        </Button>
+                    </Box>
+                </Modal>
+                <Typography
+                    variant="body2"
+                    sx={{
+                        textAlign: 'center',
+                        marginBottom: 1,
+                        color: '#007bff',
+                    }}
+                >
+                    <Link href="/cadastro">
+                        Ainda não tem uma conta? Cadastre-se
+                    </Link>
+                </Typography>
+                <Typography
+                    variant="body2"
+                    sx={{
+                        textAlign: 'center',
+                        color: '#007bff',
+                    }}
+                >
+                    <Link href="/esqueci_minha_senha">
+                        Esqueci minha senha
+                    </Link>
+                    {' | '}
+                    <Link href="/reenviar_verificacao">
+                        Reenviar verificação
+                    </Link>
+                </Typography>
+            </Box>
+            <Typography
+                variant="body2"
+                sx={{
+                    color: 'gray',
+                    textAlign: 'center',
+                    marginTop: 2,
+                }}
+            >
+                * campo obrigatório
+            </Typography>
 
-
-
-
-                    {usuarioData?.autenticacao_2fa && (
-                        <div className="mb-3">
-                            <label htmlFor="totp" className="formulario-label">Código 2FA</label>
-                            <input
-                                type="text"
-                                className="formulario-elementos"
-                                id="totp"
-                                value={totpCode}
-                                onChange={(e) => setTotpCode(e.target.value)}
-                                required
-                            />
-                        </div>
-                    )}
-
-
-
-
-                </div>
-                <button type="submit" className="botao botaoPrimario w-100">Entrar</button>
-
-                <div className="mt-3 text-center">
-                    <a href="/cadastro" className="text-decoration-none">Ainda não tem uma conta? Cadastre-se</a>
-                </div>
-            </form>
-
-            {/* Links para Esqueci a Senha e Reenviar Verificação */}
-            <div className="login-links mt-3">
-                <a href="/esqueci_minha_senha" className="resend-link">Esqueci a senha</a>
-                <a href="/reenviar_verificacao" className="resend-link">Reenviar verificação</a>
-            </div>
-
-            {/* Adiciona a CustomModal para exibir mensagens */}
             <CustomModal
                 open={modalOpen}
                 handleClose={handleCloseModal}
@@ -416,7 +601,7 @@ export default function Login() {
                 message={modalMessage}
                 isSuccess={isSuccess}
             />
-        </div>
+        </Box>
     );
 }
 

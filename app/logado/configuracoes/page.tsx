@@ -40,7 +40,7 @@ const Configuracoes = () => {
     }
 
     return (
-        <div>
+        <div style={{ padding: '20px' }}>
             <Typography color="primary" variant="h4">
                 Configurações
             </Typography>
