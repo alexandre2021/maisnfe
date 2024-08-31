@@ -10,23 +10,8 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'E-mail é obrigatório.' }, { status: 400 });
         }
 
-        // Verificar se o usuário existe e se o e-mail já foi verificado
-        const { data: user, error: userError } = await supabase
-            .from('auth.users')
-            .select('*')
-            .eq('email', email)
-            .single();
-
-        if (userError || !user) {
-            return NextResponse.json({ error: 'Usuário não encontrado.' }, { status: 404 });
-        }
-
-        if (user.confirmed_at) {
-            return NextResponse.json({ error: 'E-mail já foi confirmado.' }, { status: 400 });
-        }
-
-        // Modificar temporariamente o e-mail para acionar um novo envio de verificação
-        const temporaryEmail = `${email}+temp@yourdomain.com`;
+        // Tentar atualizar o e-mail com um e-mail temporário para reenviar a verificação
+        const temporaryEmail = `${email.split('@')[0]}+temp@${email.split('@')[1]}`;
 
         const { error: updateError1 } = await supabase.auth.updateUser({
             email: temporaryEmail,
@@ -51,3 +36,4 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Erro no servidor. Tente novamente mais tarde.' }, { status: 500 });
     }
 }
+

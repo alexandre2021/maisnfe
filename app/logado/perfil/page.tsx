@@ -83,7 +83,7 @@ const Perfil = () => {
                     const { data: userData, error: userError } = await supabase
                         .from('usuarios')
                         .select(`
-                            id, nome, telefone,
+                            id, nome, telefone, avatar_url, avatar_letra,
                             administrador, notificacao_email, notificacao_whatsapp,
                             notificacao_push, idioma, email, url_2fa, segredo_2fa, tema
                         `)
@@ -96,9 +96,9 @@ const Perfil = () => {
                         router.push('/login'); // Redireciona para a página de login se houver erro
                     } else {
                         // Atualiza os estados com os dados do usuário
-                        setImageUrlTela(sessionStorage.getItem('avatar_url') || '');
-                        setImageUrlBancoDeDados(sessionStorage.getItem('avatar_url') || '');
-                        setAvatarLetra(sessionStorage.getItem('avatar_letra') || 'A');
+                        setImageUrlTela(userData.avatar_url || '');
+                        setImageUrlBancoDeDados(userData.avatar_url || '');
+                        setAvatarLetra(userData.avatar_letra || 'A');
                         setNome(userData.nome || '');
                         setTelefone(userData.telefone || '');
                         setAdministrador(userData.administrador);
@@ -373,37 +373,53 @@ const Perfil = () => {
     // Funções para senha
 
     const handleResetPassword = async () => {
-        if (!email) {
+        try {
+            // Obtenha a sessão ativa
+            const { data: { session } } = await supabase.auth.getSession();
+    
+            // Verifique se a sessão está disponível
+            if (session) {
+                const response = await fetch('/api/esqueci_minha_senha', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email: session.user.email }), // Envie o e-mail da sessão
+                });
+    
+                const result = await response.json();
+    
+                if (response.ok) {
+                    setModalContent({
+                        title: 'Sucesso',
+                        message: result.message || 'E-mail de recuperação de senha enviado com sucesso!',
+                        isSuccess: true,
+                    });
+                } else {
+                    setModalContent({
+                        title: 'Erro',
+                        message: result.error || 'Erro ao enviar e-mail de recuperação. Tente novamente mais tarde.',
+                        isSuccess: false,
+                    });
+                }
+    
+                setModalOpen(true);
+            } else {
+                // Se não há sessão, redirecione para a página de login
+                window.location.href = '/login';
+                return;
+            }
+    
+        } catch (error) {
             setModalContent({
                 title: 'Erro',
-                message: 'Email não encontrado.',
+                message: 'Erro no servidor. Tente novamente mais tarde.',
                 isSuccess: false,
             });
             setModalOpen(true);
-            return;
         }
-
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: `http://localhost:3000/nova_senha?email=${email}`,
-        });
-
-        if (error) {
-            setModalContent({
-                title: 'Erro',
-                message: 'Erro ao enviar link de redefinição de senha.',
-                isSuccess: false,
-            });
-        } else {
-            setModalContent({
-                title: 'Sucesso',
-                message: "Email com orientações para redefinir senha enviado com sucesso.",
-                isSuccess: true,
-            });
-        }
-
-        setModalOpen(true);
     };
-
+        
     // Funções para tratar 2FA
 
     const gerarQRCode = async () => {

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { AppBar, Toolbar, IconButton, Avatar, Typography, Box } from '@mui/material';
+import { AppBar, Toolbar, IconButton, Avatar, Typography, Box, Tooltip } from '@mui/material';
 import { supabase } from '../utils/supabase/client';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -47,23 +47,25 @@ const Topbar: React.FC<TopbarProps> = ({ tema }) => {
                     Mais NFe
                 </Typography>
                 <Box>
-                    <IconButton onClick={handleAvatarClick} size="large" edge="end" color="inherit">
-                        {avatarUrl ? (
-                            <div style={{ width: 40, height: 40, borderRadius: '50%', overflow: 'hidden' }}>
-                                <Image
-                                    src={avatarUrl}
-                                    alt="User Avatar"
-                                    width={40}
-                                    height={40}
-                                    style={{ borderRadius: '50%' }}
-                                />
-                            </div>
-                        ) : (
-                            <Avatar sx={{ bgcolor: tema === 'claro' ? '#1976d2' : '#90caf9' }}>
-                                {avatarLetra}
-                            </Avatar>
-                        )}
-                    </IconButton>
+                    <Tooltip title="Perfil">
+                        <IconButton onClick={handleAvatarClick} size="large" edge="end" color="inherit">
+                            {avatarUrl ? (
+                                <div style={{ width: 40, height: 40, borderRadius: '50%', overflow: 'hidden' }}>
+                                    <Image
+                                        src={avatarUrl}
+                                        alt="User Avatar"
+                                        width={40}
+                                        height={40}
+                                        style={{ borderRadius: '50%' }}
+                                    />
+                                </div>
+                            ) : (
+                                <Avatar sx={{ bgcolor: tema === 'claro' ? '#1976d2' : '#90caf9' }}>
+                                    {avatarLetra}
+                                </Avatar>
+                            )}
+                        </IconButton>
+                    </Tooltip>
                 </Box>
             </Toolbar>
         </AppBar>

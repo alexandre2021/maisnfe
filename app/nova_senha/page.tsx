@@ -18,6 +18,7 @@ const NovaSenha = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+
     const handleCloseModal = () => {
         setModalOpen(false);
     };
@@ -53,8 +54,18 @@ const NovaSenha = () => {
         });
 
         if (error) {
+            let errorMessage = 'Erro ao atualizar a senha.';
+            if (error.message.includes('Invalid token')) {
+                errorMessage = 'Token inválido ou expirado.';
+            } else if (error.message.includes('Weak password')) {
+                errorMessage = 'A senha é muito fraca. Escolha uma senha mais forte.';
+            } else if (error.message.includes('Network error')) {
+                errorMessage = 'Erro de rede. Verifique sua conexão e tente novamente.';
+            } else if (error.message.includes('Current password used')) {
+                errorMessage = 'A nova senha não pode ser igual à senha atual.';
+            }
             setModalTitle('Erro');
-            setModalMessage('Erro ao atualizar a senha.');
+            setModalMessage(errorMessage);
             setIsSuccess(false);
         } else {
             setModalTitle('Sucesso');
@@ -156,7 +167,8 @@ const NovaSenha = () => {
                             </InputAdornment>
                         ),
                     }}
-                />                <Button
+                />
+                <Button
                     type="submit"
                     variant="contained"
                     color="primary"
@@ -218,6 +230,8 @@ const NovaSenha = () => {
 };
 
 export default NovaSenha;
+
+
 
 
 

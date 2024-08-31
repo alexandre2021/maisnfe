@@ -10,7 +10,6 @@ export default function ReenviarVerificacao() {
     const [modalOpen, setModalOpen] = useState<boolean>(false);
     const [modalMessage, setModalMessage] = useState<string>('');
     const [isSuccess, setIsSuccess] = useState<boolean>(false);
-    const [modalContent, setModalContent] = useState({ title: '', message: '', isSuccess: false }); // Add this line
 
     const handleCloseModal = () => {
         setModalOpen(false);
@@ -113,7 +112,7 @@ export default function ReenviarVerificacao() {
                         color: '#007bff',
                     }}
                 >
-                    <Link href="/login" >
+                    <Link href="/login" style={{ textDecoration: 'none', color: '#007bff' }}>
                         Voltar ao Login
                     </Link>
                 </Typography>
@@ -126,7 +125,7 @@ export default function ReenviarVerificacao() {
                         color: '#007bff',
                     }}
                 >
-                    <Link href="/cadastro" >
+                    <Link href="/cadastro" style={{ textDecoration: 'none', color: '#007bff' }}>
                         Ainda não tem uma conta? Cadastre-se
                     </Link>
                 </Typography>
@@ -146,11 +145,12 @@ export default function ReenviarVerificacao() {
             <CustomModal
                 open={modalOpen}
                 handleClose={handleCloseModal}
-                title={modalContent.title} // Uses modalContent here
-                message={modalContent.message} // Uses modalContent here
+                title={isSuccess ? 'Sucesso!' : 'Erro'}
+                message={modalMessage}
                 isSuccess={isSuccess}
             />
         </Box>
     );
 }
+
 
